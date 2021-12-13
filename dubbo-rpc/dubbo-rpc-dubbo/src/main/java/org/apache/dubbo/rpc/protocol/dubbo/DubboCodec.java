@@ -36,10 +36,7 @@ import org.apache.dubbo.rpc.RpcInvocation;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_VERSION_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.INTERFACE_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.PATH_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.VERSION_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.rpc.protocol.dubbo.CallbackServiceCodec.encodeInvocationArgument;
 import static org.apache.dubbo.rpc.protocol.dubbo.Constants.DECODE_IN_IO_THREAD_KEY;
 import static org.apache.dubbo.rpc.protocol.dubbo.Constants.DEFAULT_DECODE_IN_IO_THREAD;
@@ -122,6 +119,7 @@ public class DubboCodec extends ExchangeCodec {
                     data = decodeEventData(channel, in);
                 } else {
                     DecodeableRpcInvocation inv;
+                    //是否在io线程中进行解码，如果否，则通过DecodeHandler在根据Decodeable类型业务线程中进行解码（如DecodeableRpcInvocation）
                     if (channel.getUrl().getParameter(DECODE_IN_IO_THREAD_KEY, DEFAULT_DECODE_IN_IO_THREAD)) {
                         inv = new DecodeableRpcInvocation(channel, req, is, proto);
                         inv.decode();

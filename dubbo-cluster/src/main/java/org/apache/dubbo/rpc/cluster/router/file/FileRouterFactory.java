@@ -27,11 +27,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import static org.apache.dubbo.rpc.cluster.Constants.ROUTER_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.RULE_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.RUNTIME_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.TYPE_KEY;
+import static org.apache.dubbo.rpc.cluster.Constants.*;
 
+//装饰者，支持对ScripterRouter定义的脚本内容可以以文件的形式读取
 public class FileRouterFactory implements RouterFactory {
 
     public static final String NAME = "file";

@@ -28,10 +28,7 @@ import org.apache.dubbo.registry.support.FailbackRegistry;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.dubbo.registry.Constants.DEFAULT_REGISTRY_RETRY_PERIOD;
-import static org.apache.dubbo.registry.Constants.DEFAULT_REGISTRY_RETRY_TIMES;
-import static org.apache.dubbo.registry.Constants.REGISTRY_RETRY_PERIOD_KEY;
-import static org.apache.dubbo.registry.Constants.REGISTRY_RETRY_TIMES_KEY;
+import static org.apache.dubbo.registry.Constants.*;
 
 /**
  * AbstractRetryTask
@@ -71,6 +68,7 @@ public abstract class AbstractRetryTask implements TimerTask {
      */
     private int times = 1;
 
+    //保证可见性
     private volatile boolean cancel;
 
     AbstractRetryTask(URL url, FailbackRegistry registry, String taskName) {
@@ -102,7 +100,7 @@ public abstract class AbstractRetryTask implements TimerTask {
         if (timer.isStop() || timeout.isCancelled() || isCancel()) {
             return;
         }
-        times++;
+        times++;//记录重试次数，由于时间轮只有一个工作线程，因此无需使用volatile修饰
         timer.newTimeout(timeout.task(), tick, TimeUnit.MILLISECONDS);
     }
 
@@ -125,6 +123,7 @@ public abstract class AbstractRetryTask implements TimerTask {
         } catch (Throwable t) { // Ignore all the exceptions and wait for the next retry
             logger.warn("Failed to execute task " + taskName + ", url: " + url + ", waiting for again, cause:" + t.getMessage(), t);
             // reput this task when catch exception.
+            //如果重试失败了，则新建一个任务加入时间轮
             reput(timeout, retryPeriod);
         }
     }

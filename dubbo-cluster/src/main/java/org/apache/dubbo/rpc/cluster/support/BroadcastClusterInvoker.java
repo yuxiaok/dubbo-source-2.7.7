@@ -30,7 +30,7 @@ import java.util.List;
 
 /**
  * BroadcastClusterInvoker
- *
+ * 广播调用，只要有一个失败了就抛出异常
  */
 public class BroadcastClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

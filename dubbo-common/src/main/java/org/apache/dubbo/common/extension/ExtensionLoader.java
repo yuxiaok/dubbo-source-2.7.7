@@ -22,32 +22,14 @@ import org.apache.dubbo.common.extension.support.ActivateComparator;
 import org.apache.dubbo.common.lang.Prioritized;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
-import org.apache.dubbo.common.utils.ArrayUtils;
-import org.apache.dubbo.common.utils.ClassUtils;
-import org.apache.dubbo.common.utils.CollectionUtils;
-import org.apache.dubbo.common.utils.ConcurrentHashSet;
-import org.apache.dubbo.common.utils.ConfigUtils;
-import org.apache.dubbo.common.utils.Holder;
-import org.apache.dubbo.common.utils.ReflectUtils;
-import org.apache.dubbo.common.utils.StringUtils;
+import org.apache.dubbo.common.utils.*;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
@@ -56,9 +38,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.ServiceLoader.load;
 import static java.util.stream.StreamSupport.stream;
-import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SPLIT_PATTERN;
-import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.REMOVE_VALUE_PREFIX;
+import static org.apache.dubbo.common.constants.CommonConstants.*;
 
 /**
  * {@link org.apache.dubbo.rpc.model.ApplicationModel}, {@code DubboBootstrap} and this class are
@@ -84,8 +64,11 @@ public class ExtensionLoader<T> {
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
 
+    //这里其实相当于把ExtensionLoader也当成了一个工厂进行缓存
+    //每个扩展点都有一个自己的ExtensionLoader实例，key为扩展点，value为ExtensionLoader实例
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<>(64);
 
+    //每个扩展点实现都有一个实例对象，类似于单例，key为扩展点实现，value为扩展点实现的实例对象
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<>(64);
 
     private final Class<?> type;
@@ -96,17 +79,29 @@ public class ExtensionLoader<T> {
 
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<>();
 
+    //key是扩展实现类的名称,value是@Activate实例
     private final Map<String, Object> cachedActivates = new ConcurrentHashMap<>();
+    //value可能是原生类、也可能是包装之后的类
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>();
+
+    //说明一个扩展点只能有一个适配器类：1、提前就已经实现好的适配器类，如AdaptiveExtensionFactory；2、根据URL参数动态生成的适配器类，如Transporter$Adaptive;
     private final Holder<Object> cachedAdaptiveInstance = new Holder<>();
     private volatile Class<?> cachedAdaptiveClass = null;
+
+    //默认的扩展实现类
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
 
+    //装饰者模式：因为每个扩展实现类可能会有相同的逻辑，那么每个扩展实现类都写一次会变得复杂，因此使用了这种包装类的形式（一般只有包装类需要包装所有的扩展实现类的时候才会这么做）
+    //判断一个是扩展实现类是否是包装类的规则：有一个参数的构造方法，且参数类型为扩展类类型
     private Set<Class<?>> cachedWrapperClasses;
 
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<>();
 
+    //加载策略，通过JDK SPI机制实现的，DUBBO SPI借鉴了JDK SPI的思想设计了三种加载目录分别针对不同的用处：
+    //1、META-INF/services/扩展点完整名称：用来兼容JDK SPI，使用ServiceLoadingStrategy
+    //2、META-INF/services/dubbo/扩展点完整名称：用户自定义的扩展点实现，使用DubboLoadingStrategy
+    //3、META-INF/services/dubbo/internal/扩展点完整名称：DUBBO内部定义的扩展点实现，使用DubboInternalLoadingStrategy
     private static volatile LoadingStrategy[] strategies = loadLoadingStrategies();
 
     public static void setLoadingStrategies(LoadingStrategy... strategies) {

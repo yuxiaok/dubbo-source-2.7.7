@@ -24,13 +24,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.apache.dubbo.common.constants.CommonConstants.MAX_PROXY_COUNT;
@@ -186,6 +180,7 @@ public abstract class Proxy {
             }
 
             // create ProxyInstance class.
+            //创建目标类的代理类
             String pcn = pkg + ".proxy" + id;
             ccp.setClassName(pcn);
             ccp.addField("public static java.lang.reflect.Method[] methods;");
@@ -196,6 +191,7 @@ public abstract class Proxy {
             clazz.getField("methods").set(null, methods.toArray(new Method[0]));
 
             // create Proxy class.
+            //创建Proxy的代理类，类似于一个工厂，提供了newInstance方法每次生产新的目标类的代理类
             String fcn = Proxy.class.getName() + id;
             ccm = ClassGenerator.newInstance(cl);
             ccm.setClassName(fcn);

@@ -45,6 +45,7 @@ import static org.apache.dubbo.rpc.Constants.MERGER_KEY;
 
 /**
  * @param <T>
+ *     合并操作结果，如果merger.methodName，则会循环调用用户提供的method，否则使用Merger的扩展实现进行处理
  */
 @SuppressWarnings("unchecked")
 public class MergeableClusterInvoker<T> extends AbstractClusterInvoker<T> {

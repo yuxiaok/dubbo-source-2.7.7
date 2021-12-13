@@ -42,6 +42,7 @@ import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
  * Note that retry causes latency.
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Failover">Failover</a>
+ * 失败重试，默认重试2次，加起来一共三次，适用于幂等操作，但是可能会超时
  *
  */
 public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {

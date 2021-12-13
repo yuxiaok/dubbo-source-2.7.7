@@ -34,99 +34,103 @@ import static org.apache.dubbo.common.constants.CommonConstants.REFERENCE_INTERC
 
 public abstract class AbstractCluster implements Cluster {
 
-    private <T> Invoker<T> buildClusterInterceptors(AbstractClusterInvoker<T> clusterInvoker, String key) {
-        AbstractClusterInvoker<T> last = clusterInvoker;
-        List<ClusterInterceptor> interceptors = ExtensionLoader.getExtensionLoader(ClusterInterceptor.class).getActivateExtension(clusterInvoker.getUrl(), key);
+	private <T> Invoker<T> buildClusterInterceptors(AbstractClusterInvoker<T> clusterInvoker, String key) {
+		AbstractClusterInvoker<T> last = clusterInvoker;
+		//获取所有激活的ClusterInterceptor
+		List<ClusterInterceptor> interceptors = ExtensionLoader.getExtensionLoader(ClusterInterceptor.class).getActivateExtension(clusterInvoker.getUrl(), key);
 
-        if (!interceptors.isEmpty()) {
-            for (int i = interceptors.size() - 1; i >= 0; i--) {
-                final ClusterInterceptor interceptor = interceptors.get(i);
-                final AbstractClusterInvoker<T> next = last;
-                last = new InterceptorInvokerNode<>(clusterInvoker, interceptor, next);
-            }
-        }
-        return last;
-    }
+		if (!interceptors.isEmpty()) {
+			//形成拦截器链
+			for (int i = interceptors.size() - 1; i >= 0; i--) {
+				final ClusterInterceptor interceptor = interceptors.get(i);
+				final AbstractClusterInvoker<T> next = last;
+				last = new InterceptorInvokerNode<>(clusterInvoker, interceptor, next);
+			}
+		}
+		return last;
+	}
 
-    @Override
-    public <T> Invoker<T> join(Directory<T> directory) throws RpcException {
-        return buildClusterInterceptors(doJoin(directory), directory.getUrl().getParameter(REFERENCE_INTERCEPTOR_KEY));
-    }
+	@Override
+	public <T> Invoker<T> join(Directory<T> directory) throws RpcException {
+		//为invoker添加拦截器，形成责任链，注意：拦截器是在整个调用链的最外层，我们可以扩展ClusterInterceptor，然后选择性激活
+		return buildClusterInterceptors(doJoin(directory), directory.getUrl().getParameter(REFERENCE_INTERCEPTOR_KEY));
+	}
 
-    protected abstract <T> AbstractClusterInvoker<T> doJoin(Directory<T> directory) throws RpcException;
+	//选择一个Invoker：Directory->Router-LoadBalance->Invoker
+	protected abstract <T> AbstractClusterInvoker<T> doJoin(Directory<T> directory) throws RpcException;
 
-    protected class InterceptorInvokerNode<T> extends AbstractClusterInvoker<T> {
+	protected class InterceptorInvokerNode<T> extends AbstractClusterInvoker<T> {
 
-        private AbstractClusterInvoker<T> clusterInvoker;
-        private ClusterInterceptor interceptor;
-        private AbstractClusterInvoker<T> next;
+		private AbstractClusterInvoker<T> clusterInvoker;
+		private ClusterInterceptor interceptor;
+		private AbstractClusterInvoker<T> next;
 
-        public InterceptorInvokerNode(AbstractClusterInvoker<T> clusterInvoker,
-                                      ClusterInterceptor interceptor,
-                                      AbstractClusterInvoker<T> next) {
-            this.clusterInvoker = clusterInvoker;
-            this.interceptor = interceptor;
-            this.next = next;
-        }
+		public InterceptorInvokerNode(AbstractClusterInvoker<T> clusterInvoker,
+									  ClusterInterceptor interceptor,
+									  AbstractClusterInvoker<T> next) {
+			this.clusterInvoker = clusterInvoker;
+			this.interceptor = interceptor;
+			this.next = next;
+		}
 
-        @Override
-        public Class<T> getInterface() {
-            return clusterInvoker.getInterface();
-        }
+		@Override
+		public Class<T> getInterface() {
+			return clusterInvoker.getInterface();
+		}
 
-        @Override
-        public URL getUrl() {
-            return clusterInvoker.getUrl();
-        }
+		@Override
+		public URL getUrl() {
+			return clusterInvoker.getUrl();
+		}
 
-        @Override
-        public boolean isAvailable() {
-            return clusterInvoker.isAvailable();
-        }
+		@Override
+		public boolean isAvailable() {
+			return clusterInvoker.isAvailable();
+		}
 
-        @Override
-        public Result invoke(Invocation invocation) throws RpcException {
-            Result asyncResult;
-            try {
-                interceptor.before(next, invocation);
-                asyncResult = interceptor.intercept(next, invocation);
-            } catch (Exception e) {
-                // onError callback
-                if (interceptor instanceof ClusterInterceptor.Listener) {
-                    ClusterInterceptor.Listener listener = (ClusterInterceptor.Listener) interceptor;
-                    listener.onError(e, clusterInvoker, invocation);
-                }
-                throw e;
-            } finally {
-                interceptor.after(next, invocation);
-            }
-            return asyncResult.whenCompleteWithContext((r, t) -> {
-                // onResponse callback
-                if (interceptor instanceof ClusterInterceptor.Listener) {
-                    ClusterInterceptor.Listener listener = (ClusterInterceptor.Listener) interceptor;
-                    if (t == null) {
-                        listener.onMessage(r, clusterInvoker, invocation);
-                    } else {
-                        listener.onError(t, clusterInvoker, invocation);
-                    }
-                }
-            });
-        }
+		@Override
+		public Result invoke(Invocation invocation) throws RpcException {
+			Result asyncResult;
+			try {
+				interceptor.before(next, invocation);
+				asyncResult = interceptor.intercept(next, invocation);
+			} catch (Exception e) {
+				// onError callback
+				if (interceptor instanceof ClusterInterceptor.Listener) {
+					ClusterInterceptor.Listener listener = (ClusterInterceptor.Listener) interceptor;
+					listener.onError(e, clusterInvoker, invocation);
+				}
+				throw e;
+			} finally {
+				interceptor.after(next, invocation);
+			}
+			return asyncResult.whenCompleteWithContext((r, t) -> {
+				// onResponse callback
+				if (interceptor instanceof ClusterInterceptor.Listener) {
+					ClusterInterceptor.Listener listener = (ClusterInterceptor.Listener) interceptor;
+					if (t == null) {
+						listener.onMessage(r, clusterInvoker, invocation);
+					} else {
+						listener.onError(t, clusterInvoker, invocation);
+					}
+				}
+			});
+		}
 
-        @Override
-        public void destroy() {
-            clusterInvoker.destroy();
-        }
+		@Override
+		public void destroy() {
+			clusterInvoker.destroy();
+		}
 
-        @Override
-        public String toString() {
-            return clusterInvoker.toString();
-        }
+		@Override
+		public String toString() {
+			return clusterInvoker.toString();
+		}
 
-        @Override
-        protected Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
-            // The only purpose is to build a interceptor chain, so the cluster related logic doesn't matter.
-            return null;
-        }
-    }
+		@Override
+		protected Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
+			// The only purpose is to build a interceptor chain, so the cluster related logic doesn't matter.
+			return null;
+		}
+	}
 }

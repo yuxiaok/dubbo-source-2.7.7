@@ -26,12 +26,7 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.cluster.router.AbstractRouter;
 
-import javax.script.Bindings;
-import javax.script.Compilable;
-import javax.script.CompiledScript;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
+import javax.script.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,12 +34,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static org.apache.dubbo.rpc.cluster.Constants.DEFAULT_SCRIPT_TYPE_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.FORCE_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.PRIORITY_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.RULE_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.RUNTIME_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.TYPE_KEY;
+import static org.apache.dubbo.rpc.cluster.Constants.*;
 
 /**
  * ScriptRouter
@@ -54,12 +44,16 @@ public class ScriptRouter extends AbstractRouter {
     private static final int SCRIPT_ROUTER_DEFAULT_PRIORITY = 0;
     private static final Logger logger = LoggerFactory.getLogger(ScriptRouter.class);
 
+    //缓存脚本引擎，所有的ScriptRouter共用
     private static final Map<String, ScriptEngine> ENGINES = new ConcurrentHashMap<>();
 
+    //当前Router使用的java脚本引擎
     private final ScriptEngine engine;
 
+    //脚本内容
     private final String rule;
 
+    //编译之后的脚本
     private CompiledScript function;
 
     public ScriptRouter(URL url) {
@@ -112,8 +106,10 @@ public class ScriptRouter extends AbstractRouter {
             if (function == null) {
                 return invokers;
             }
+            //执行并且转换结果
             return getRoutedInvokers(function.eval(bindings));
         } catch (ScriptException e) {
+            //如果脚本错误，则不使用该router
             logger.error("route error, rule has been ignored. rule: " + rule + ", method:" +
                     invocation.getMethodName() + ", url: " + RpcContext.getContext().getUrl(), e);
             return invokers;
@@ -138,6 +134,21 @@ public class ScriptRouter extends AbstractRouter {
      * create bindings for script engine
      */
     private <T> Bindings createBindings(List<Invoker<T>> invokers, Invocation invocation) {
+        //脚本的入参
+        //e.g:
+        // function route(invokers, invocation, context){
+        //  var result = new java.util.ArrayList(invokers.size());
+        //	var targetHost = new java.util.ArrayList();
+        //	targetHost.add("10.134.108.2");
+        //	for (var i = 0; i < invokers.length; i) {//遍历Invoker集合
+        //        // 判断Invoker的host是否符合条件
+        //		if(targetHost.contains(invokers[i].getUrl().getHost())){
+        //			result.add(invokers[i]);
+        //		}
+        //	}
+        //	return result;
+        //}
+        //route(invokers, invocation, context) //立即执行route()函数
         Bindings bindings = engine.createBindings();
         // create a new List of invokers
         bindings.put("invokers", new ArrayList<>(invokers));

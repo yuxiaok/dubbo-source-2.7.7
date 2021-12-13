@@ -45,6 +45,7 @@ import static org.apache.dubbo.rpc.cluster.Constants.DEFAULT_FORKS;
  * Invoke a specific number of invokers concurrently, usually used for demanding real-time operations, but need to waste more service resources.
  *
  * <a href="http://en.wikipedia.org/wiki/Fork_(topology)">Fork</a>
+ * 同步并行调度，适用于实时性要求比较高的读取，通过阻塞队列只要拿到一个返回值，就立刻返回
  */
 public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

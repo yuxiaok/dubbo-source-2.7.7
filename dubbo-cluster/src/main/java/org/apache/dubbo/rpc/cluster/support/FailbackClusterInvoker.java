@@ -45,6 +45,7 @@ import static org.apache.dubbo.rpc.cluster.Constants.FAIL_BACK_TASKS_KEY;
  * Especially useful for services of notification.
  *
  * <a href="http://en.wikipedia.org/wiki/Failback">Failback</a>
+ * 通过时间轮定时重试，适用于通知操作，默认每隔5s重试一次，一共重试三次
  */
 public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

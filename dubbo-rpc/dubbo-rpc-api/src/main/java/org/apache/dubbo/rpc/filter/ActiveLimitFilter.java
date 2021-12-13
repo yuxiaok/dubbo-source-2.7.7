@@ -18,12 +18,7 @@ package org.apache.dubbo.rpc.filter;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.Activate;
-import org.apache.dubbo.rpc.Filter;
-import org.apache.dubbo.rpc.Invocation;
-import org.apache.dubbo.rpc.Invoker;
-import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.RpcException;
-import org.apache.dubbo.rpc.RpcStatus;
+import org.apache.dubbo.rpc.*;
 
 import static org.apache.dubbo.common.constants.CommonConstants.CONSUMER;
 import static org.apache.dubbo.common.constants.CommonConstants.TIMEOUT_KEY;
@@ -51,7 +46,9 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
         URL url = invoker.getUrl();
         String methodName = invocation.getMethodName();
         int max = invoker.getUrl().getMethodParameter(methodName, ACTIVES_KEY, 0);
+        //当前访问的方法的统计信息
         final RpcStatus rpcStatus = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName());
+        //查看是否超过了设置的最大并发
         if (!RpcStatus.beginCount(url, methodName, max)) {
             long timeout = invoker.getUrl().getMethodParameter(invocation.getMethodName(), TIMEOUT_KEY, 0);
             long start = System.currentTimeMillis();
@@ -59,7 +56,7 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
             synchronized (rpcStatus) {
                 while (!RpcStatus.beginCount(url, methodName, max)) {
                     try {
-                        rpcStatus.wait(remain);
+                        rpcStatus.wait(remain);//在超时时间内等待
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -88,6 +85,7 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
         int max = invoker.getUrl().getMethodParameter(methodName, ACTIVES_KEY, 0);
 
         RpcStatus.endCount(url, methodName, getElapsed(invocation), true);
+        //唤醒阻塞的线程
         notifyFinish(RpcStatus.getStatus(url, methodName), max);
     }
 
@@ -108,6 +106,7 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
     }
 
     private long getElapsed(Invocation invocation) {
+        //统计耗时
         Object beginTime = invocation.get(ACTIVELIMIT_FILTER_START_TIME);
         return beginTime != null ? System.currentTimeMillis() - (Long) beginTime : 0;
     }

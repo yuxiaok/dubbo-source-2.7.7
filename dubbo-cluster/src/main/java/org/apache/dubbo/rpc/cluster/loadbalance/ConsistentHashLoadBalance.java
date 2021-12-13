@@ -34,17 +34,20 @@ import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SPLIT_PATT
 
 /**
  * ConsistentHashLoadBalance
+ * 一致性hash负载均衡算法
  */
 public class ConsistentHashLoadBalance extends AbstractLoadBalance {
     public static final String NAME = "consistenthash";
 
     /**
      * Hash nodes name
+     * 每个provider节点有多个槽位（相当于复制品，目的是为了解决hash环的数据倾斜问题）
      */
     public static final String HASH_NODES = "hash.nodes";
 
     /**
      * Hash arguments name
+     * 参与hash计算的方法参数
      */
     public static final String HASH_ARGUMENTS = "hash.arguments";
 
@@ -56,6 +59,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         String methodName = RpcUtils.getMethodName(invocation);
         String key = invokers.get(0).getUrl().getServiceKey() + "." + methodName;
         // using the hashcode of list to compute the hash only pay attention to the elements in the list
+        //目的是为了保证生产者列表没有发生变化
         int invokersHashCode = invokers.hashCode();
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
         if (selector == null || selector.identityHashCode != invokersHashCode) {
@@ -67,12 +71,16 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
 
     private static final class ConsistentHashSelector<T> {
 
+        //hash环，每个provider的Invoker在这个环上都有replicaNumber个，目的是为了保证整个环的provider是均匀的，避免数据倾斜的情况
+        //TreeMap默认按照key升序
         private final TreeMap<Long, Invoker<T>> virtualInvokers;
 
+        //每个provider的invoker的数量
         private final int replicaNumber;
 
         private final int identityHashCode;
 
+        //参与hash计算的参数索引
         private final int[] argumentIndex;
 
         ConsistentHashSelector(List<Invoker<T>> invokers, String methodName, int identityHashCode) {
@@ -113,9 +121,11 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
             return buf.toString();
         }
 
+        //查找第一个节点值大于等于hash值的invoker对象
         private Invoker<T> selectForKey(long hash) {
             Map.Entry<Long, Invoker<T>> entry = virtualInvokers.ceilingEntry(hash);
             if (entry == null) {
+                //如果hash值大于hash环中的所有Invoker，则回到hash环的开头，返回第一个invoker对象
                 entry = virtualInvokers.firstEntry();
             }
             return entry.getValue();

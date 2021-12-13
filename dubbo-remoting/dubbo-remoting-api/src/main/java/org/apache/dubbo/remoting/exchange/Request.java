@@ -29,14 +29,29 @@ public class Request {
 
     private static final AtomicLong INVOKE_ID = new AtomicLong(0);
 
+    /**
+     * 请求的Id
+     */
     private final long mId;
 
+    /**
+     * 请求的版本
+     */
     private String mVersion;
 
+    /**
+     * 请求是否是双向的
+     */
     private boolean mTwoWay = true;
 
+    /**
+     * 请求是否是事件
+     */
     private boolean mEvent = false;
 
+    /**
+     * 解码请求失败
+     */
     private boolean mBroken = false;
 
     private Object mData;

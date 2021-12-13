@@ -84,6 +84,7 @@ public class TagRouter extends AbstractRouter implements ConfigurationListener {
         return url;
     }
 
+    //携带tag的请求可以降级访问不携带tag的Provider，但是不携带tag的请求永远无法访问到有tag的Provider
     @Override
     public <T> List<Invoker<T>> route(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException {
         if (CollectionUtils.isEmpty(invokers)) {
@@ -121,6 +122,7 @@ public class TagRouter extends AbstractRouter implements ConfigurationListener {
                 return result;
             }
             // FAILOVER: return all Providers without any tags.
+            //直接找地址匹配且tag不存在的
             else {
                 List<Invoker<T>> tmp = filterInvoker(invokers, invoker -> addressNotMatches(invoker.getUrl(),
                         tagRouterRuleCopy.getAddresses()));

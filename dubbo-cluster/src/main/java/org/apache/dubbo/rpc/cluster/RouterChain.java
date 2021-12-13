@@ -33,13 +33,16 @@ import java.util.stream.Collectors;
 public class RouterChain<T> {
 
     // full list of addresses from registry, classified by method name.
+    //要过滤的
     private List<Invoker<T>> invokers = Collections.emptyList();
 
     // containing all routers, reconstruct every time 'route://' urls change.
+    //所有的，包含内部指定激活的以及通过route://协议添加的
     private volatile List<Router> routers = Collections.emptyList();
 
     // Fixed router instances: ConfigConditionRouter, TagRouter, e.g., the rule for each instance may change but the
     // instance will never delete or recreate.
+    //只包括内部指定激活的
     private List<Router> builtinRouters = Collections.emptyList();
 
     public static <T> RouterChain<T> buildChain(URL url) {

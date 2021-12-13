@@ -18,6 +18,7 @@ package org.apache.dubbo.remoting.zookeeper;
 
 import java.util.List;
 
+//监听子节点变化
 public interface ChildListener {
 
     void childChanged(String path, List<String> children);

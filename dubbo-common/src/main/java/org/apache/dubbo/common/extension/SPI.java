@@ -17,11 +17,7 @@
 
 package org.apache.dubbo.common.extension;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Marker for extension interface
@@ -49,6 +45,13 @@ import java.lang.annotation.Target;
  * <p>
  * Fails to load Extension("mina"). When user configure to use mina, dubbo will complain the extension cannot be loaded,
  * instead of reporting which extract extension implementation fails and the extract reason.
+ * </p>
+ * <p>
+ *     DUBBO的SPI将配置文件设计成k-v形式，目的是为了解决：
+ *     <br/>
+ *     1、资源浪费（因为JDK SPI会实例化所有的扩展点实现，而k-v形式可以通过传入k来只实例化需要的扩展点实现）；
+ *     <br/>
+ *     2、更快的定位问题（通常JDK SPI在找不到扩展点实现的时候就只能抛出找不到扩展点实现，而不能指出具体是缺失哪个扩展点实现，而k-v形式就可以通过k在抛出异常的时候很明确的指出确实哪个扩展点实现）；
  * </p>
  */
 @Documented

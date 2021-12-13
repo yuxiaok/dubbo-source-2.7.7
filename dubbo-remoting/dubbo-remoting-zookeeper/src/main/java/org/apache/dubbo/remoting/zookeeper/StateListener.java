@@ -16,6 +16,7 @@
  */
 package org.apache.dubbo.remoting.zookeeper;
 
+//zk状态变化监听器
 public interface StateListener {
 
     int SESSION_LOST = 0;

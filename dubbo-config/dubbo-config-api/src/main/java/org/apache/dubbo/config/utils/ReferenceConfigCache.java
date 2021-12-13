@@ -71,6 +71,7 @@ public class ReferenceConfigCache {
 
     private final ConcurrentMap<String, ReferenceConfigBase<?>> referredReferences = new ConcurrentHashMap<>();
 
+    //被代理的Class->key(group/service:version)->代理对象
     private final ConcurrentMap<Class<?>, ConcurrentMap<String, Object>> proxies = new ConcurrentHashMap<>();
 
     private ReferenceConfigCache(String name, KeyGenerator generator) {

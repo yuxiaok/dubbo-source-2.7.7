@@ -45,6 +45,7 @@ import static org.apache.dubbo.common.constants.RegistryConstants.ZONE_KEY;
  * 2. check the zone the current request belongs, pick the registry that has the same zone first.
  * 3. Evenly balance traffic between all registries based on each registry's weight.
  * 4. Pick anyone that's available.
+ * 多注册中心的调度
  */
 public class ZoneAwareClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

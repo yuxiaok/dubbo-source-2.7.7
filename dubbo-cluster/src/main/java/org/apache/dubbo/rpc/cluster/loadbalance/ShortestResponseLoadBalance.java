@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * If there is only one invoker, use the invoker directly;
  * if there are multiple invokers and the weights are not the same, then random according to the total weight;
  * if there are multiple invokers and the same weight, then randomly called.
+ * 基于权重的最快响应的负载均衡机制
  */
 public class ShortestResponseLoadBalance extends AbstractLoadBalance {
 
@@ -60,12 +61,16 @@ public class ShortestResponseLoadBalance extends AbstractLoadBalance {
             Invoker<T> invoker = invokers.get(i);
             RpcStatus rpcStatus = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName());
             // Calculate the estimated response time from the product of active connections and succeeded average elapsed time.
+            //从filter中获取平均的成功响应时间
             long succeededAverageElapsed = rpcStatus.getSucceededAverageElapsed();
+            //获取当前正在激活的请求
             int active = rpcStatus.getActive();
+            //计算一个预估本次请求需要消耗的时间
             long estimateResponse = succeededAverageElapsed * active;
             int afterWarmup = getWeight(invoker, invocation);
             weights[i] = afterWarmup;
             // Same as LeastActiveLoadBalance
+            //如果存在更小的就重置
             if (estimateResponse < shortestResponse) {
                 shortestResponse = estimateResponse;
                 shortestCount = 1;
@@ -73,7 +78,7 @@ public class ShortestResponseLoadBalance extends AbstractLoadBalance {
                 totalWeight = afterWarmup;
                 firstWeight = afterWarmup;
                 sameWeight = true;
-            } else if (estimateResponse == shortestResponse) {
+            } else if (estimateResponse == shortestResponse) {//存在相同的就记录，后面根据权重选择
                 shortestIndexes[shortestCount++] = i;
                 totalWeight += afterWarmup;
                 if (sameWeight && i > 0

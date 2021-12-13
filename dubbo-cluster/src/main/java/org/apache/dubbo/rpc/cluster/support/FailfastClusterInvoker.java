@@ -32,6 +32,7 @@ import java.util.List;
  * Usually used for non-idempotent write operations
  *
  * <a href="http://en.wikipedia.org/wiki/Fail-fast">Fail-fast</a>
+ * 直接抛出异常，适用于非幂等操作
  *
  */
 public class FailfastClusterInvoker<T> extends AbstractClusterInvoker<T> {

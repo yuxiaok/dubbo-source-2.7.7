@@ -29,8 +29,10 @@ import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
 @SPI
 public interface ClusterInterceptor {
 
+    //前置拦截
     void before(AbstractClusterInvoker<?> clusterInvoker, Invocation invocation);
 
+    //后置拦截
     void after(AbstractClusterInvoker<?> clusterInvoker, Invocation invocation);
 
     /**

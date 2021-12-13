@@ -32,17 +32,27 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RpcStatus {
 
+    //对于服务的统计
     private static final ConcurrentMap<String, RpcStatus> SERVICE_STATISTICS = new ConcurrentHashMap<String, RpcStatus>();
 
+    //服务的方法的统计
     private static final ConcurrentMap<String, ConcurrentMap<String, RpcStatus>> METHOD_STATISTICS = new ConcurrentHashMap<String, ConcurrentMap<String, RpcStatus>>();
     private final ConcurrentMap<String, Object> values = new ConcurrentHashMap<String, Object>();
+    //当前激活的
     private final AtomicInteger active = new AtomicInteger();
+    //总访问次数
     private final AtomicLong total = new AtomicLong();
+    //失败访问次数
     private final AtomicInteger failed = new AtomicInteger();
+    //总访问耗时
     private final AtomicLong totalElapsed = new AtomicLong();
+    //失败访问总耗时
     private final AtomicLong failedElapsed = new AtomicLong();
+    //最大访问耗时
     private final AtomicLong maxElapsed = new AtomicLong();
+    //失败最大访问耗时
     private final AtomicLong failedMaxElapsed = new AtomicLong();
+    //成功最大访问耗时
     private final AtomicLong succeededMaxElapsed = new AtomicLong();
 
     private RpcStatus() {
@@ -281,6 +291,7 @@ public class RpcStatus {
         if (succeeded == 0) {
             return 0;
         }
+        //成功时间/成功数
         return getSucceededElapsed() / succeeded;
     }
 

@@ -26,6 +26,8 @@ import org.apache.dubbo.remoting.RemotingException;
 import org.apache.dubbo.remoting.exchange.Request;
 import org.apache.dubbo.remoting.exchange.Response;
 
+//用于解码自身消息，如果消息实现了Decodeable接口
+//DecodeHandler主要是对请求体和响应结果的解码，而Codec2是对整个请求和响应的编解码
 public class DecodeHandler extends AbstractChannelHandlerDelegate {
 
     private static final Logger log = LoggerFactory.getLogger(DecodeHandler.class);

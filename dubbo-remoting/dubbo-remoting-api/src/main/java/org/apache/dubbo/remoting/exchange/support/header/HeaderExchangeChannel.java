@@ -166,7 +166,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         if (timeout > 0) {
             long start = System.currentTimeMillis();
             while (DefaultFuture.hasFuture(channel)
-                    && System.currentTimeMillis() - start < timeout) {
+                    && System.currentTimeMillis() - start < timeout) {//等待当前channel上已有的请求-响应完成
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {

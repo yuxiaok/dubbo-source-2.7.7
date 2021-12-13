@@ -21,13 +21,7 @@ import org.apache.dubbo.common.logger.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.AbstractExecutorService;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 /**
  * The most important difference between this Executor and other normal Executor is that this one doesn't manage
@@ -72,6 +66,10 @@ public class ThreadlessExecutor extends AbstractExecutorService {
      * Waits until there is a task, executes the task and all queued tasks (if there're any). The task is either a normal
      * response or a timeout response.
      */
+    /**
+     * 请求方的线程阻塞，等待响应返回处理
+     * @throws InterruptedException
+     */
     public void waitAndDrain() throws InterruptedException {
         /**
          * Usually, {@link #waitAndDrain()} will only get called once. It blocks for the response for the first time,
@@ -82,6 +80,7 @@ public class ThreadlessExecutor extends AbstractExecutorService {
          * 'finished' only appear in waitAndDrain, since waitAndDrain is binding to one RPC call (one thread), the call
          * of it is totally sequential.
          */
+        //这里finished不需要保证线程安全，因为一次rpc调用只有一个线程，而每次rpc调用都是顺序的
         if (finished) {
             return;
         }
@@ -132,10 +131,10 @@ public class ThreadlessExecutor extends AbstractExecutorService {
     @Override
     public void execute(Runnable runnable) {
         synchronized (lock) {
-            if (!waiting) {
+            if (!waiting) {//如果业务线程不是阻塞状态了，直接通过公共的线程池去执行新添加的任务
                 sharedExecutor.execute(runnable);
             } else {
-                queue.add(runnable);
+                queue.add(runnable);//通过阻塞队列，由业务线程去执行
             }
         }
     }

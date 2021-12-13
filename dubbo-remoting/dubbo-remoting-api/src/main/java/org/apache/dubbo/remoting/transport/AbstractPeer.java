@@ -17,19 +17,20 @@
 package org.apache.dubbo.remoting.transport;
 
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.remoting.Channel;
-import org.apache.dubbo.remoting.ChannelHandler;
-import org.apache.dubbo.remoting.Constants;
-import org.apache.dubbo.remoting.Endpoint;
-import org.apache.dubbo.remoting.RemotingException;
+import org.apache.dubbo.remoting.*;
 
 /**
  * AbstractPeer
  */
 public abstract class AbstractPeer implements Endpoint, ChannelHandler {
 
+    //这个handler可以看做是一个容器，其内部存储了多个handler实例
+    //由于AbstractPeer本身也是一个ChannelHandler，其内部方法的调用最终都是委派给了这个handler，
+    // 这里的handler有点类似于监听器，以netty为例，netty中所有触发过的行为，之后都会调用该handler中的所有实例
+    //相当于dubbo提供的ChannelHandler只是用来监听各个具体的NIO框架触发的行为，从其方法的命名都是过去式也能了解
     private final ChannelHandler handler;
 
+    //代表当前端点
     private volatile URL url;
 
     // closing closed means the process is being closed and close is finished

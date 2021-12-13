@@ -34,9 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.dubbo.remoting.Constants.HEARTBEAT_CHECK_TICK;
-import static org.apache.dubbo.remoting.Constants.LEAST_HEARTBEAT_DURATION;
-import static org.apache.dubbo.remoting.Constants.TICKS_PER_WHEEL;
+import static org.apache.dubbo.remoting.Constants.*;
 import static org.apache.dubbo.remoting.utils.UrlUtils.getHeartbeat;
 import static org.apache.dubbo.remoting.utils.UrlUtils.getIdleTimeout;
 
@@ -187,7 +185,7 @@ public class HeaderExchangeClient implements ExchangeClient {
     }
 
     private void startHeartBeatTask(URL url) {
-        if (!client.canHandleIdle()) {
+        if (!client.canHandleIdle()) {//判断当前被包装的client能否自己处理心跳，如果不能，则在这一层创建定时任务，像NettyClient是能够通过IdleStateHandler自己处理的
             AbstractTimerTask.ChannelProvider cp = () -> Collections.singletonList(HeaderExchangeClient.this);
             int heartbeat = getHeartbeat(url);
             long heartbeatTick = calculateLeastDuration(heartbeat);

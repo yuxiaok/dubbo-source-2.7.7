@@ -33,8 +33,10 @@ import java.util.Set;
  */
 public class InternalThreadLocal<V> {
 
+    //当前线程在InternalThreadLocalMap中的所有InternalThreadLocal（Set<InternalThreadLocal>）的位置
     private static final int VARIABLES_TO_REMOVE_INDEX = InternalThreadLocalMap.nextVariableIndex();
 
+    //当前InternalThreadLocal在InternalThreadLocalMap中位置
     private final int index;
 
     public InternalThreadLocal() {

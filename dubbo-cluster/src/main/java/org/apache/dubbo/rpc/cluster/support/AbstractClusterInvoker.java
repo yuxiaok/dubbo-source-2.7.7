@@ -59,6 +59,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
 
     private AtomicBoolean destroyed = new AtomicBoolean(false);
 
+    //consumer上一次调用的provider
     private volatile Invoker<T> stickyInvoker = null;
 
     public AbstractClusterInvoker() {
@@ -120,7 +121,17 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
      * b) Reselection, the validation rule for reselection: selected > available. This rule guarantees that
      * the selected invoker has the minimum chance to be one in the previously selected list, and also
      * guarantees this invoker is available.
-     *
+     * </br>
+     * <p>
+     * 提供了一套通用的兜底操作：
+     * 1、如果曾经使用的invoker存在并且可用，则直接返回(select)；
+     * 2、doSelect：
+     *  2.1、直接负载均衡，选择一个；如果曾经尝试过或者不可用；
+     *  2.2 reselect：
+     *      2.2.1、在未曾经选择过的可用的invoker中再次通过负载均衡算法查找；
+     *      2.2.2、如果未找到，则在曾经选择过的所有的可用的invoker中负载均衡查找；
+     *  2.3、如果未找到，则直接选择2.1中负载均衡找到的invoker的下一个invoker作为返回；
+     *</p>
      * @param loadbalance load balance policy
      * @param invocation  invocation
      * @param invokers    invoker candidates
@@ -253,9 +264,12 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
             ((RpcInvocation) invocation).addObjectAttachments(contextAttachments);
         }
 
+        //Directory->Router过滤之后的
         List<Invoker<T>> invokers = list(invocation);
+        //获取负载均衡算法
         LoadBalance loadbalance = initLoadBalance(invokers, invocation);
         RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);
+        //真正的筛选并调用
         return doInvoke(invocation, invokers, loadbalance);
     }
 

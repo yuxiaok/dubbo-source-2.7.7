@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * If there is only one invoker, use the invoker directly;
  * if there are multiple invokers and the weights are not the same, then random according to the total weight;
  * if there are multiple invokers and the same weight, then randomly called.
+ * 最少调用数的权重负载均衡机制
  */
 public class LeastActiveLoadBalance extends AbstractLoadBalance {
 
@@ -60,12 +61,14 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
         for (int i = 0; i < length; i++) {
             Invoker<T> invoker = invokers.get(i);
             // Get the active number of the invoker
+            //通过ActiveLimitFilter获取当前provider正在被几个consumer访问
             int active = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName()).getActive();
             // Get the weight of the invoker's configuration. The default value is 100.
             int afterWarmup = getWeight(invoker, invocation);
             // save for later use
             weights[i] = afterWarmup;
             // If it is the first invoker or the active number of the invoker is less than the current least active number
+            //如果是第一个invoker或者是当前invoke的active小于曾经记录的leastActive，则进行重置
             if (leastActive == -1 || active < leastActive) {
                 // Reset the active number of the current invoker to the least active number
                 leastActive = active;
@@ -80,7 +83,7 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
                 // Each invoke has the same weight (only one invoker here)
                 sameWeight = true;
                 // If current invoker's active value equals with leaseActive, then accumulating.
-            } else if (active == leastActive) {
+            } else if (active == leastActive) {//如果存在leastActive相同的，则继续记录
                 // Record the index of the least active invoker in leastIndexes order
                 leastIndexes[leastCount++] = i;
                 // Accumulate the total weight of the least active invoker
@@ -96,8 +99,10 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
             // If we got exactly one invoker having the least active value, return this invoker directly.
             return invokers.get(leastIndexes[0]);
         }
+
+        //权重不相同，则根据权重再筛选一下
         if (!sameWeight && totalWeight > 0) {
-            // If (not every invoker has the same weight & at least one invoker's weight>0), select randomly based on 
+            // If (not every invoker has the same weight & at least one invoker's weight>0), select randomly based on
             // totalWeight.
             int offsetWeight = ThreadLocalRandom.current().nextInt(totalWeight);
             // Return a invoker based on the random value.

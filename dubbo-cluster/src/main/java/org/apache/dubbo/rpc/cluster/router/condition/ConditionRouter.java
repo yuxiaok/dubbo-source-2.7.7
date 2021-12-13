@@ -29,24 +29,12 @@ import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.cluster.router.AbstractRouter;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.apache.dubbo.common.constants.CommonConstants.ENABLED_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.HOST_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.METHODS_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.METHOD_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.ADDRESS_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.FORCE_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.PRIORITY_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.RULE_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.RUNTIME_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.*;
+import static org.apache.dubbo.rpc.cluster.Constants.*;
 
 /**
  * ConditionRouter
@@ -56,12 +44,17 @@ public class ConditionRouter extends AbstractRouter {
     public static final String NAME = "condition";
 
     private static final Logger logger = LoggerFactory.getLogger(ConditionRouter.class);
+    //这个正则表达表示的是会匹配两部分：第一部分是&、=、!=、，、字符，第二部分是字符后紧跟着的非字符的数字、字符、字母等value值
     protected static final Pattern ROUTE_PATTERN = Pattern.compile("([&!=,]*)\\s*([^&!=,\\s]+)");
+    //表达式格式：条件=>动作
+    //条件，一个Map中表示的是&关系，MatchPair内部包含了每个key对应的匹配和不匹配的值
     protected Map<String, MatchPair> whenCondition;
+    //动作，一个Map中表示的是&关系
     protected Map<String, MatchPair> thenCondition;
 
     private boolean enabled;
 
+    //这个rule就是一个表达式
     public ConditionRouter(String rule, boolean force, boolean enabled) {
         this.force = force;
         this.enabled = enabled;
@@ -95,6 +88,9 @@ public class ConditionRouter extends AbstractRouter {
         }
     }
 
+    //e.g：
+    //（1）host = 192.168.0.100 => host = 192.168.0.150
+    //（2）host = 2.2.2.2,1.1.1.1,3.3.3.3 & method != get => host = 1.2.3.4
     private static Map<String, MatchPair> parseRule(String rule)
             throws ParseException {
         Map<String, MatchPair> condition = new HashMap<String, MatchPair>();
@@ -106,6 +102,7 @@ public class ConditionRouter extends AbstractRouter {
         // Multiple values
         Set<String> values = null;
         final Matcher matcher = ROUTE_PATTERN.matcher(rule);
+        //每次查找一对
         while (matcher.find()) { // Try to match one by one
             String separator = matcher.group(1);
             String content = matcher.group(2);
@@ -176,14 +173,17 @@ public class ConditionRouter extends AbstractRouter {
             return invokers;
         }
         try {
+            //如果条件不匹配，当前route无需执行，也就意味着无需过滤
             if (!matchWhen(url, invocation)) {
                 return invokers;
             }
+            //没有合适的invoker
             List<Invoker<T>> result = new ArrayList<Invoker<T>>();
             if (thenCondition == null) {
                 logger.warn("The current consumer in the service blacklist. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey());
                 return result;
             }
+            //匹配动作，找到符合条件的invoker
             for (Invoker<T> invoker : invokers) {
                 if (matchThen(invoker.getUrl(), url)) {
                     result.add(invoker);
@@ -192,6 +192,7 @@ public class ConditionRouter extends AbstractRouter {
             if (!result.isEmpty()) {
                 return result;
             } else if (force) {
+                //router强制执行，返回一个空结果，意味着没有任何匹配的invoker
                 logger.warn("The route result is empty and force execute. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey() + ", router: " + url.getParameterAndDecoded(RULE_KEY));
                 return result;
             }

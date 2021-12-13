@@ -116,6 +116,8 @@ public abstract class Wrapper {
         return WRAPPER_MAP.computeIfAbsent(c, key -> makeWrapper(key));
     }
 
+    //会生成一个wrapper的代理对象作为Dispatcher，然后分发给真正的代理对象调用
+    //因为jdk动态代理已经生成了代理对象通过invoke进行分发， 所以这里其实就是实现这个
     private static Wrapper makeWrapper(Class<?> c) {
         if (c.isPrimitive()) {
             throw new IllegalArgumentException("Can not create wrapper for primitive type: " + c);

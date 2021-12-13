@@ -22,9 +22,7 @@ import org.apache.dubbo.rpc.Invocation;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.apache.dubbo.rpc.Constants.TPS_LIMIT_RATE_KEY;
-import static org.apache.dubbo.rpc.Constants.TPS_LIMIT_INTERVAL_KEY;
-import static org.apache.dubbo.rpc.Constants.DEFAULT_TPS_LIMIT_INTERVAL;
+import static org.apache.dubbo.rpc.Constants.*;
 
 /**
  * DefaultTPSLimiter is a default implementation for tps filter. It is an in memory based implementation for storing
@@ -34,6 +32,7 @@ import static org.apache.dubbo.rpc.Constants.DEFAULT_TPS_LIMIT_INTERVAL;
  */
 public class DefaultTPSLimiter implements TPSLimiter {
 
+    //key(serviceKey)-value(StatItem相当于一个桶，一段时间间隔内只有这么几个令牌，过了间隔之后，重置桶)
     private final ConcurrentMap<String, StatItem> stats = new ConcurrentHashMap<String, StatItem>();
 
     @Override

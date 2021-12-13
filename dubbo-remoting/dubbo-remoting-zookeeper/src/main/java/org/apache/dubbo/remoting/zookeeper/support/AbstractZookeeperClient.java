@@ -41,14 +41,19 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
 
     private final URL url;
 
+    //zk状态监听器
     private final Set<StateListener> stateListeners = new CopyOnWriteArraySet<StateListener>();
 
+    //子节点监听器
+    //path->dubbo对外暴露的统一的监听器->zk的监听器（因为不同的zk的版本监听器的实现不一样，因此需要适配）
     private final ConcurrentMap<String, ConcurrentMap<ChildListener, TargetChildListener>> childListeners = new ConcurrentHashMap<String, ConcurrentMap<ChildListener, TargetChildListener>>();
 
+    //节点数据变化监听器
     private final ConcurrentMap<String, ConcurrentMap<DataListener, TargetDataListener>> listeners = new ConcurrentHashMap<String, ConcurrentMap<DataListener, TargetDataListener>>();
 
     private volatile boolean closed = false;
 
+    //缓存所有持久化的节点
     private final Set<String>  persistentExistNodePath = new ConcurrentHashSet<>();
 
     public AbstractZookeeperClient(URL url) {
@@ -71,7 +76,7 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
     @Override
     public void create(String path, boolean ephemeral) {
         if (!ephemeral) {
-            if(persistentExistNodePath.contains(path)){
+            if(persistentExistNodePath.contains(path)){//先从本地缓存中检查，减少一次与zk服务器的交互
                 return;
             }
             if (checkExists(path)) {

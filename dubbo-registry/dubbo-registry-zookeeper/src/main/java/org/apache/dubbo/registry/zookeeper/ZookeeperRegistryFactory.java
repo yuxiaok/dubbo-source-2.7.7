@@ -34,7 +34,7 @@ public class ZookeeperRegistryFactory extends AbstractRegistryFactory {
      * @param zookeeperTransporter
      */
     public void setZookeeperTransporter(ZookeeperTransporter zookeeperTransporter) {
-        this.zookeeperTransporter = zookeeperTransporter;
+        this.zookeeperTransporter =     zookeeperTransporter;
     }
 
     @Override

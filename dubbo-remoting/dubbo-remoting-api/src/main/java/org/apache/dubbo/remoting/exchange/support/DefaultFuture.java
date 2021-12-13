@@ -43,13 +43,16 @@ import static org.apache.dubbo.common.constants.CommonConstants.TIMEOUT_KEY;
 
 /**
  * DefaultFuture.
+ * 保存了请求-响应的映射关系，将同步转异步
  */
 public class DefaultFuture extends CompletableFuture<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultFuture.class);
 
+    //请求id->dubbo channel
     private static final Map<Long, Channel> CHANNELS = new ConcurrentHashMap<>();
 
+    //请求id->线程future，用于获取异步请求返回值
     private static final Map<Long, DefaultFuture> FUTURES = new ConcurrentHashMap<>();
 
     public static final Timer TIME_OUT_TIMER = new HashedWheelTimer(
@@ -62,10 +65,16 @@ public class DefaultFuture extends CompletableFuture<Object> {
     private final Channel channel;
     private final Request request;
     private final int timeout;
+    //当前DefaultFuture实例时的时间
     private final long start = System.currentTimeMillis();
+    //发送请求的时间
     private volatile long sent;
+    //超时检查任务
     private Timeout timeoutCheckTask;
 
+    //请求方设置的线程池（如果是ThreadlessExecutor），为了解决请求方每次被请求都要创建一个线程池去处理响应的问题（高并发、请求量大的时候，会频繁创建线程，甚至导致OOM）
+    //因此在响应处理的时候，从Future中拿到请求方使用的线程池，通过该线程池进行响应处理
+    //@see org.apache.dubbo.remoting.transport.dispatcher.WrappedChannelHandler.getPreferredExecutorService
     private ExecutorService executor;
 
     public ExecutorService getExecutor() {
@@ -168,7 +177,7 @@ public class DefaultFuture extends CompletableFuture<Object> {
             DefaultFuture future = FUTURES.remove(response.getId());
             if (future != null) {
                 Timeout t = future.timeoutCheckTask;
-                if (!timeout) {
+                if (!timeout) {//如果没有超时，则取消定时任务
                     // decrease Time
                     t.cancel();
                 }
@@ -214,6 +223,7 @@ public class DefaultFuture extends CompletableFuture<Object> {
 
         // the result is returning, but the caller thread may still waiting
         // to avoid endless waiting for whatever reason, notify caller thread to return.
+        //ThreadlessExecutor的兜底操作，当前一次rpc已经响应内容了，但是业务线程仍然还在阻塞，这里通过添加一个异常任务，唤醒阻塞的业务线程
         if (executor != null && executor instanceof ThreadlessExecutor) {
             ThreadlessExecutor threadlessExecutor = (ThreadlessExecutor) executor;
             if (threadlessExecutor.isWaiting()) {
@@ -266,6 +276,7 @@ public class DefaultFuture extends CompletableFuture<Object> {
         return newRequest;
     }
 
+    //如果这个Task已经被时间轮调度了，说明当前已经超时了
     private static class TimeoutCheckTask implements TimerTask {
 
         private final Long requestID;
@@ -281,7 +292,7 @@ public class DefaultFuture extends CompletableFuture<Object> {
                 return;
             }
 
-            if (future.getExecutor() != null) {
+            if (future.getExecutor() != null) {//注意：这里可以让ThreadlessExecutor的业务线程取消阻塞
                 future.getExecutor().execute(() -> notifyTimeout(future));
             } else {
                 notifyTimeout(future);

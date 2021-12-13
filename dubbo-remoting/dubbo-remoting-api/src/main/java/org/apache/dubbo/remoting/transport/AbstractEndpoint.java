@@ -37,6 +37,7 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEndpoint.class);
 
+    //dubbo抽象的编解码器，各个具体的NIO实现会委托这个编解码器实现真正的编解码，默认使用TelnetCodec
     private Codec2 codec;
 
     private int timeout;

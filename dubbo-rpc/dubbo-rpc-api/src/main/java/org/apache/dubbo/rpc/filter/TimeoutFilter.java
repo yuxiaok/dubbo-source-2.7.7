@@ -20,14 +20,7 @@ import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
-import org.apache.dubbo.rpc.AppResponse;
-import org.apache.dubbo.rpc.Filter;
-import org.apache.dubbo.rpc.Invocation;
-import org.apache.dubbo.rpc.Invoker;
-import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.RpcException;
-import org.apache.dubbo.rpc.TimeoutCountDown;
+import org.apache.dubbo.rpc.*;
 
 import java.util.Arrays;
 
@@ -48,6 +41,7 @@ public class TimeoutFilter implements Filter, Filter.Listener {
 
     @Override
     public void onResponse(Result appResponse, Invoker<?> invoker, Invocation invocation) {
+        //判断Consumer传递过来的TimeoutCountDown，如果已经超时了，就清空处理结果
         Object obj = RpcContext.getContext().get(TIME_COUNTDOWN_KEY);
         if (obj != null) {
             TimeoutCountDown countDown = (TimeoutCountDown) obj;

@@ -24,14 +24,19 @@ import java.util.concurrent.atomic.LongAdder;
  */
 class StatItem {
 
+    //serviceKey
     private String name;
 
+    //最后一次重置的时间
     private long lastResetTime;
 
+    //重置间隔时间
     private long interval;
 
+    //原子更新令牌数
     private LongAdder token;
 
+    //设置的令牌数
     private int rate;
 
     StatItem(String name, int rate, long interval) {
@@ -44,6 +49,7 @@ class StatItem {
 
     public boolean isAllowable() {
         long now = System.currentTimeMillis();
+        //重置
         if (now > lastResetTime + interval) {
             token = buildLongAdder(rate);
             lastResetTime = now;

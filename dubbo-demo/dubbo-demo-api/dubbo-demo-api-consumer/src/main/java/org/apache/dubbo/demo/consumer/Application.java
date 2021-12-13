@@ -24,6 +24,8 @@ import org.apache.dubbo.config.utils.ReferenceConfigCache;
 import org.apache.dubbo.demo.DemoService;
 import org.apache.dubbo.rpc.service.GenericService;
 
+import java.io.IOException;
+
 public class Application {
     public static void main(String[] args) {
         if (isClassic(args)) {
@@ -47,16 +49,21 @@ public class Application {
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
                 .reference(reference)
                 .start();
+        try {
+            System.in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        DemoService demoService = ReferenceConfigCache.getCache().get(reference);
-        String message = demoService.sayHello("dubbo");
-        System.out.println(message);
-
-        // generic invoke
-        GenericService genericService = (GenericService) demoService;
-        Object genericInvokeResult = genericService.$invoke("sayHello", new String[] { String.class.getName() },
-                new Object[] { "dubbo generic invoke" });
-        System.out.println(genericInvokeResult);
+        //DemoService demoService = ReferenceConfigCache.getCache().get(reference);
+        //String message = demoService.sayHello("dubbo");
+        //System.out.println(message);
+        //
+        //// generic invoke
+        //GenericService genericService = (GenericService) demoService;
+        //Object genericInvokeResult = genericService.$invoke("sayHello", new String[] { String.class.getName() },
+        //        new Object[] { "dubbo generic invoke" });
+        //System.out.println(genericInvokeResult);
     }
 
     private static void runWithRefer() {

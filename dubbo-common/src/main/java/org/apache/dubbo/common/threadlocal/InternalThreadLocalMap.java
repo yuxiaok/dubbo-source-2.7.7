@@ -28,8 +28,10 @@ public final class InternalThreadLocalMap {
 
     private Object[] indexedVariables;
 
+    //使用原生的ThreadLocal进行兜底，保存了当前线程的InternalThreadLocalMap
     private static ThreadLocal<InternalThreadLocalMap> slowThreadLocalMap = new ThreadLocal<InternalThreadLocalMap>();
 
+    //每个InternalThreadLocal的下标
     private static final AtomicInteger NEXT_INDEX = new AtomicInteger();
 
     public static final Object UNSET = new Object();
