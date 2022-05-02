@@ -497,11 +497,11 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                             registryURL = registryURL.addParameter(PROXY_KEY, proxy);
                         }
 
-                        //这里把真正要暴露的服务url作为export追加到了registryURL上
+                        //这里把真正要暴露的服务url作为export追加到了registryURL上，所有后面会使用RegistryProtocol
                         Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
-                        //RegistryProtocol
+                        //注意这里使用的是：RegistryProtocol
                             //1、启动server（常用netty）进行监听
                             //2、连接注册中心（常用zk）以及创建注册中心的客户端
                             //3、创建节点到注册中心

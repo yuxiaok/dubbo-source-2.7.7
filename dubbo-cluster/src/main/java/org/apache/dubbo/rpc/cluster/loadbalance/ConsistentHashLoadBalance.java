@@ -71,11 +71,11 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
 
     private static final class ConsistentHashSelector<T> {
 
-        //hash环，每个provider的Invoker在这个环上都有replicaNumber个，目的是为了保证整个环的provider是均匀的，避免数据倾斜的情况
+        //hash环，每个provider的Invoker在这个环上都有多个，目的是为了保证整个环的provider是均匀的，避免数据倾斜的情况
         //TreeMap默认按照key升序
         private final TreeMap<Long, Invoker<T>> virtualInvokers;
 
-        //每个provider的invoker的数量
+        //hash槽的数量
         private final int replicaNumber;
 
         private final int identityHashCode;

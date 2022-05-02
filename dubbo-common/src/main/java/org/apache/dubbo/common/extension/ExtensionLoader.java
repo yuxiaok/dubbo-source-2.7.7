@@ -71,16 +71,20 @@ public class ExtensionLoader<T> {
     //每个扩展点实现都有一个实例对象，类似于单例，key为扩展点实现，value为扩展点实现的实例对象
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<>(64);
 
+    //当前ExtensionLoader实例的扩展点Class类型
     private final Class<?> type;
 
     private final ExtensionFactory objectFactory;
 
+    //扩展实现类->名称
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<>();
 
+    //name->扩展实现类
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<>();
 
-    //key是扩展实现类的名称,value是@Activate实例
+    //key是扩展类实现类的名称,value是@Activate实例
     private final Map<String, Object> cachedActivates = new ConcurrentHashMap<>();
+
     //value可能是原生类、也可能是包装之后的类
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>();
 
@@ -254,6 +258,7 @@ public class ExtensionLoader<T> {
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> activateExtensions = new ArrayList<>();
         List<String> names = values == null ? new ArrayList<>(0) : asList(values);
+        //默认激活的进行匹配
         if (!names.contains(REMOVE_VALUE_PREFIX + DEFAULT_KEY)) {
             getExtensionClasses();
             for (Map.Entry<String, Object> entry : cachedActivates.entrySet()) {
@@ -271,22 +276,25 @@ public class ExtensionLoader<T> {
                 } else {
                     continue;
                 }
-                if (isMatchGroup(group, activateGroup)
-                        && !names.contains(name)
-                        && !names.contains(REMOVE_VALUE_PREFIX + name)
-                        && isActive(activateValue, url)) {
+                if (isMatchGroup(group, activateGroup)//group匹配
+                        && !names.contains(name)//不属于要求激活的
+                        && !names.contains(REMOVE_VALUE_PREFIX + name)//要求移出的
+                        && isActive(activateValue, url)) {//根据Activate的value和url中指定的value是否匹配来决定是否使用
                     activateExtensions.add(getExtension(name));
                 }
             }
             activateExtensions.sort(ActivateComparator.COMPARATOR);
         }
+        //继续查找指定激活的
         List<T> loadedExtensions = new ArrayList<>();
         for (int i = 0; i < names.size(); i++) {
             String name = names.get(i);
             if (!name.startsWith(REMOVE_VALUE_PREFIX)
                     && !names.contains(REMOVE_VALUE_PREFIX + name)) {
+                //默认的
                 if (DEFAULT_KEY.equals(name)) {
                     if (!loadedExtensions.isEmpty()) {
+                        //说明自定的激活在默认之前
                         activateExtensions.addAll(0, loadedExtensions);
                         loadedExtensions.clear();
                     }
@@ -438,6 +446,7 @@ public class ExtensionLoader<T> {
      * Return default extension, return <code>null</code> if it's not configured.
      */
     public T getDefaultExtension() {
+        //@SPI中的value属性就是指定的默认扩展点实现
         getExtensionClasses();
         if (StringUtils.isBlank(cachedDefaultName) || "true".equals(cachedDefaultName)) {
             return null;
@@ -650,17 +659,23 @@ public class ExtensionLoader<T> {
             return instance;
         }
 
+        //拿到所有的set方法进行IOC
         try {
             for (Method method : instance.getClass().getMethods()) {
+                //start is 'set'
+                //parameterTypes.length=1
+                //public
                 if (!isSetter(method)) {
                     continue;
                 }
                 /**
                  * Check {@link DisableInject} to see if we need auto injection for this property
                  */
+                //不允许自动注入
                 if (method.getAnnotation(DisableInject.class) != null) {
                     continue;
                 }
+                //第一个参数是原语类型
                 Class<?> pt = method.getParameterTypes()[0];
                 if (ReflectUtils.isPrimitives(pt)) {
                     continue;
@@ -668,6 +683,7 @@ public class ExtensionLoader<T> {
 
                 try {
                     String property = getSetterProperty(method);
+                    //通过对象工厂从SPI(注入的是适配器类：可能是动态生成的，也有可能是@Adaptive注解的)或Spring中获取需要的实例，反射注入
                     Object object = objectFactory.getExtension(pt, property);
                     if (object != null) {
                         method.invoke(instance, object);
@@ -869,12 +885,12 @@ public class ExtensionLoader<T> {
                     type + ", class line: " + clazz.getName() + "), class "
                     + clazz.getName() + " is not subtype of interface.");
         }
-        if (clazz.isAnnotationPresent(Adaptive.class)) {
-            cacheAdaptiveClass(clazz, overridden);
+        if (clazz.isAnnotationPresent(Adaptive.class)) {//注意：必须是类上注解
+            cacheAdaptiveClass(clazz, overridden);//如果某个扩展点有被被@Adaptive注解的实现类，那么就直接认为该类为该扩展点的适配器类，不需要动态生成了
         } else if (isWrapperClass(clazz)) {
-            cacheWrapperClass(clazz);
+            cacheWrapperClass(clazz);//包装类
         } else {
-            clazz.getConstructor();
+            clazz.getConstructor();//普通类
             if (StringUtils.isEmpty(name)) {
                 name = findAnnotationName(clazz);
                 if (name.length() == 0) {
@@ -884,7 +900,7 @@ public class ExtensionLoader<T> {
 
             String[] names = NAME_SEPARATOR.split(name);
             if (ArrayUtils.isNotEmpty(names)) {
-                cacheActivateClass(clazz, names[0]);
+                cacheActivateClass(clazz, names[0]);//可能存在激活条件
                 for (String n : names) {
                     cacheName(clazz, n);
                     saveInExtensionClass(extensionClasses, clazz, n, overridden);
@@ -1001,6 +1017,7 @@ public class ExtensionLoader<T> {
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
         }
+        //如果扩展点没有被@Adaptive注解的适配器类，则需要动态生成
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 

@@ -38,6 +38,7 @@ public class ThreadlessExecutor extends AbstractExecutorService {
 
     private ExecutorService sharedExecutor;
 
+    //保持等待的future
     private CompletableFuture<?> waitingFuture;
 
     private boolean finished = false;
@@ -85,6 +86,7 @@ public class ThreadlessExecutor extends AbstractExecutorService {
             return;
         }
 
+        //add/remove：抛出异常，offer/poll：true/false，put/take：阻塞
         Runnable runnable = queue.take();
 
         synchronized (lock) {

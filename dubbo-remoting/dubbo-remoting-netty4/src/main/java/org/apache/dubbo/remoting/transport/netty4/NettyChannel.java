@@ -163,7 +163,7 @@ final class NettyChannel extends AbstractChannel {
         int timeout = 0;
         try {
             ChannelFuture future = channel.writeAndFlush(message);//使用netty channel发送数据到对端
-            if (sent) {//是否同步等待
+            if (sent) {//是否同步等待返回结果
                 // wait timeout ms
                 timeout = getUrl().getPositiveParameter(TIMEOUT_KEY, DEFAULT_TIMEOUT);
                 success = future.await(timeout);

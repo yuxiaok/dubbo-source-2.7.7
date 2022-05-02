@@ -45,6 +45,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
 
     private static final String CHANNEL_KEY = HeaderExchangeChannel.class.getName() + ".CHANNEL";
 
+    //这里其实已经是NettyClient了
     private final Channel channel;
 
     private volatile boolean closed = false;

@@ -41,6 +41,7 @@ public class FutureContext {
         return futureTL.get();
     }
 
+    //携带AppResponse的Future
     private CompletableFuture<?> future;
     private CompletableFuture<?> compatibleFuture;
 

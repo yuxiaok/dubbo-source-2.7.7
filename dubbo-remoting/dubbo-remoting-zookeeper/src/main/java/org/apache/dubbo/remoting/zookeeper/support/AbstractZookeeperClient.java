@@ -39,6 +39,7 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
     protected int DEFAULT_CONNECTION_TIMEOUT_MS = 5 * 1000;
     protected int DEFAULT_SESSION_TIMEOUT_MS = 60 * 1000;
 
+    //zookeeper连接地址
     private final URL url;
 
     //zk状态监听器

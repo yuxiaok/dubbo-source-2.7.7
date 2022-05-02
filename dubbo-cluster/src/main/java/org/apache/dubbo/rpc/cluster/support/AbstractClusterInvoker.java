@@ -127,7 +127,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
      * 1、如果曾经使用的invoker存在并且可用，则直接返回(select)；
      * 2、doSelect：
      *  2.1、直接负载均衡，选择一个；如果曾经尝试过或者不可用；
-     *  2.2 reselect：
+     *  2.2 reselect(在所有未曾选择的中选择一个，如果都选择过了，则在所有选择过中选一个可用的)：
      *      2.2.1、在未曾经选择过的可用的invoker中再次通过负载均衡算法查找；
      *      2.2.2、如果未找到，则在曾经选择过的所有的可用的invoker中负载均衡查找；
      *  2.3、如果未找到，则直接选择2.1中负载均衡找到的invoker的下一个invoker作为返回；
@@ -224,6 +224,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
                 invokers.size() > 1 ? (invokers.size() - 1) : invokers.size());
 
         // First, try picking a invoker not in `selected`.
+        //首先从所有未被选择过的可用的中进行负载均衡
         for (Invoker<T> invoker : invokers) {
             if (availablecheck && !invoker.isAvailable()) {
                 continue;
@@ -239,6 +240,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
         }
 
         // Just pick an available invoker using loadbalance policy
+        //然后从被选择过的所有可用的中进行负载均衡
         if (selected != null) {
             for (Invoker<T> invoker : selected) {
                 if ((invoker.isAvailable()) // available first
@@ -269,7 +271,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
         //获取负载均衡算法
         LoadBalance loadbalance = initLoadBalance(invokers, invocation);
         RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);
-        //真正的筛选并调用
+        //真正的负载均衡并调用
         return doInvoke(invocation, invokers, loadbalance);
     }
 

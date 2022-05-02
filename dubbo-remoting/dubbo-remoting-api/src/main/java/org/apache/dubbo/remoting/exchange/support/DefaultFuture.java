@@ -67,7 +67,6 @@ public class DefaultFuture extends CompletableFuture<Object> {
     private final int timeout;
     //当前DefaultFuture实例时的时间
     private final long start = System.currentTimeMillis();
-    //发送请求的时间
     private volatile long sent;
     //超时检查任务
     private Timeout timeoutCheckTask;
@@ -174,6 +173,7 @@ public class DefaultFuture extends CompletableFuture<Object> {
 
     public static void received(Channel channel, Response response, boolean timeout) {
         try {
+            //根据requestId获取线程池线程和用户线程的对应关系
             DefaultFuture future = FUTURES.remove(response.getId());
             if (future != null) {
                 Timeout t = future.timeoutCheckTask;

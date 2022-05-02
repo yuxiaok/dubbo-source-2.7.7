@@ -106,7 +106,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
                 .addParameter(INTERFACE_KEY, RegistryService.class.getName())
                 .removeParameters(EXPORT_KEY, REFER_KEY)
                 .build();
-        //实例："zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService"，因此相当于同一台zk服务器就是一个registry
+        //实例："zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService"，因此相当于一个集群就是一个registry
         String key = createRegistryCacheKey(url);
         // Lock the registry access process to ensure a single instance of the registry
         LOCK.lock();

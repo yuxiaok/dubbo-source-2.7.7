@@ -155,9 +155,15 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 }
             } else {
                 List<URL> urls = new ArrayList<>();
+                //获取所有要创建并监听的目录
                 for (String path : toCategoriesPath(url)) {
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
-                    ChildListener zkListener = listeners.computeIfAbsent(listener, k -> (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, k, toUrlsWithEmpty(url, parentPath, currentChilds)));
+                    //这里NotifyListener就是RegistryCategory
+                    //这个ChildListener当监听的目录发生变化时会触发notify，notify方法就会更新Properties和fileCache
+                    ChildListener zkListener = listeners.computeIfAbsent(listener, k ->
+                            //匿名内部类
+                            (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, k, toUrlsWithEmpty(url, parentPath, currentChilds))
+                    );
                     zkClient.create(path, false);
                     List<String> children = zkClient.addChildListener(path, zkListener);
                     if (children != null) {

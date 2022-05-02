@@ -201,6 +201,7 @@ public class RegistryProtocol implements Protocol {
         //  the same service. Because the subscribed is cached key with the name of the service, it causes the
         //  subscription information to cover.
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(providerUrl);
+        //重写配置监听器
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
 
@@ -468,12 +469,15 @@ public class RegistryProtocol implements Protocol {
         directory.setProtocol(protocol);
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getConsumerUrl().getParameters());
+        //生成consumer的url
         URL subscribeUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
+        //注册到注册中心
         if (directory.isShouldRegister()) {
             directory.setRegisteredConsumerUrl(subscribeUrl);
             registry.register(directory.getRegisteredConsumerUrl());
         }
         directory.buildRouterChain(subscribeUrl);
+        //订阅目录
         directory.subscribe(toSubscribeUrl(subscribeUrl));
 
         Invoker<T> invoker = cluster.join(directory);

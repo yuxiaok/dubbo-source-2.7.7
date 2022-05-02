@@ -79,6 +79,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     //经过配置不断覆盖之后的url
     private volatile URL overrideDirectoryUrl; // Initialization at construction time, assertion not null, and always assign non null value
 
+    //注册到注册中心的url
     private volatile URL registeredConsumerUrl;
 
     /**
@@ -195,6 +196,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
 
     @Override
     public synchronized void notify(List<URL> urls) {
+        //处理configurator、route、provider
         Map<String, List<URL>> categoryUrls = urls.stream()
                 .filter(Objects::nonNull)
                 .filter(this::isValidCategory)

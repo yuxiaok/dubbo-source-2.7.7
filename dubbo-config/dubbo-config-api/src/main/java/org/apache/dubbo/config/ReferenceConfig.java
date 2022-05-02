@@ -298,6 +298,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                 // if protocols not injvm checkRegistry
                 if (!LOCAL_PROTOCOL.equalsIgnoreCase(getProtocol())) {
                     checkRegistry();
+                    //获取注册中心
                     List<URL> us = ConfigValidationUtils.loadRegistries(this, false);
                     if (CollectionUtils.isNotEmpty(us)) {
                         for (URL u : us) {
@@ -317,6 +318,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             if (urls.size() == 1) {
                 invoker = REF_PROTOCOL.refer(interfaceClass, urls.get(0));
             } else {
+                //多注册中心
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 for (URL url : urls) {
@@ -363,6 +365,36 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             metadataService.publishServiceDefinition(consumerURL);
         }
         // create service proxy
+        /**
+         * public class proxy0 implements ClassGenerator.DC, EchoService, DemoService {
+         *     // 方法数组
+         *     public static Method[] methods;
+         *     private InvocationHandler handler;
+         *
+         *     public proxy0(InvocationHandler invocationHandler) {
+         *         this.handler = invocationHandler;
+         *     }
+         *
+         *     public proxy0() {
+         *     }
+         *
+         *     public String sayHello(String string) {
+         *         // 将参数存储到 Object 数组中
+         *         Object[] arrobject = new Object[]{string};
+         *         // 调用 InvocationHandler 实现类的 invoke 方法得到调用结果
+         *         Object object = this.handler.invoke(this, methods[0], arrobject);
+         *         // 返回调用结果
+         *         return (String)object;
+         *     }
+         *
+         *
+         *    public Object $echo (Object object){
+         *          Object[] arrobject = new Object[]{object};
+         *          Object object2 = this.handler.invoke(this, methods[1], arrobject);
+         *          return object2;
+         *   }
+         *}
+         */
         return (T) PROXY_FACTORY.getProxy(invoker, ProtocolUtils.isGeneric(generic));
     }
 

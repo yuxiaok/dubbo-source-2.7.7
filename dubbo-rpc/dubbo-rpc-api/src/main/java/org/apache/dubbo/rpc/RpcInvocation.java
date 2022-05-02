@@ -50,6 +50,7 @@ public class RpcInvocation implements Invocation, Serializable {
 
     private static final long serialVersionUID = -4355285085441097045L;
 
+    //group/serviceName:version
     private String targetServiceUniqueName;
 
     private String methodName;

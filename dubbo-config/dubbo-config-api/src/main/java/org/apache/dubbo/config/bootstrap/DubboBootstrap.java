@@ -756,6 +756,8 @@ public class DubboBootstrap extends GenericEventListener {
                 registerServiceInstance();
             }
 
+            //这个地方执行不到，因为如果init=ture,则直接执行ReferenceBean#afterPorperties
+            //否则，只有在注入的时候ReferenceBean#getObject
             referServices();
             if (asyncExportingFutures.size() > 0) {
                 new Thread(() -> {

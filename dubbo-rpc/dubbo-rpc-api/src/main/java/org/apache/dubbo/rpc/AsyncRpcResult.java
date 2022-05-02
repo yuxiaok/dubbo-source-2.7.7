@@ -185,9 +185,10 @@ public class AsyncRpcResult implements Result {
     public Object recreate() throws Throwable {
         RpcInvocation rpcInvocation = (RpcInvocation) invocation;
         if (InvokeMode.FUTURE == rpcInvocation.getInvokeMode()) {
+            //直接返回FutureAdapter<V>，这个V在FutureAdapter中已经是真实的值了
             return RpcContext.getContext().getFuture();
         }
-
+        //返回AppResponse，通过AppResponse再获取真实的V
         return getAppResponse().recreate();
     }
 

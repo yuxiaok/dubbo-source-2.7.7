@@ -85,7 +85,7 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
                 currentClient.send(inv, isSent);
                 return AsyncRpcResult.newDefaultAsyncResult(invocation);
             } else {
-                //twoWay，关心返回结果，两种：同步处理（使用ThreadlessExecutor），异步处理(使用共享线程池)
+                //twoWay，关心返回结果（消费者线程模型），两种：同步处理（使用ThreadlessExecutor），异步处理(使用共享线程池)
                 ExecutorService executor = getCallbackExecutor(getUrl(), inv);
                 CompletableFuture<AppResponse> appResponseFuture =
                         currentClient.request(inv, timeout, executor).thenApply(obj -> (AppResponse) obj);
