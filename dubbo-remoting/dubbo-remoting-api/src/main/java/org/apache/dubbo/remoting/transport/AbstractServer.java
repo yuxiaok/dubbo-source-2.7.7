@@ -58,12 +58,14 @@ public abstract class AbstractServer extends AbstractEndpoint implements Remotin
 		super(url, handler);
 		localAddress = getUrl().toInetSocketAddress();
 
+		//服务端暴露的ip:port，ServerSocket
 		String bindIp = getUrl().getParameter(Constants.BIND_IP_KEY, getUrl().getHost());
 		int bindPort = getUrl().getParameter(Constants.BIND_PORT_KEY, getUrl().getPort());
 		if (url.getParameter(ANYHOST_KEY, false) || NetUtils.isInvalidLocalHost(bindIp)) {
 			bindIp = ANYHOST_VALUE;
 		}
 		bindAddress = new InetSocketAddress(bindIp, bindPort);
+		//通道数，默认没限制
 		this.accepts = url.getParameter(ACCEPTS_KEY, DEFAULT_ACCEPTS);
 		this.idleTimeout = url.getParameter(IDLE_TIMEOUT_KEY, DEFAULT_IDLE_TIMEOUT);
 		try {

@@ -216,7 +216,7 @@ public class RegistryProtocol implements Protocol {
         final URL registeredProviderUrl = getUrlToRegistry(providerUrl, registryUrl);
 
         // decide if we need to delay publish
-        //真正的进行发布
+        //真正的进行发布(这里就是只订阅，不注册)
         boolean register = providerUrl.getParameter(REGISTER_KEY, true);
         if (register) {
             register(registryUrl, registeredProviderUrl);
